@@ -1,2 +1,2 @@
 adafruit-circuitpython-bmp3xx
-board
+adafruit-blinka
