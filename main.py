@@ -3,6 +3,8 @@ import board
 import adafruit_bmp3xx
 import adafruit_mpu6050
 
+data = {'height': 0, 'acc_x': 0, 'acc_y': 0, 'acc_z': 0}
+
 def calibrate(sensor, threshold=50, n_samples=100):
     """
     Get calibration data for the sensor, by repeatedly measuring
@@ -17,15 +19,20 @@ def calibrate(sensor, threshold=50, n_samples=100):
     print("CALIBRATING SENSOR")
     for i in range(n_samples):
         if sensor == 'bmp':
-            data = bmp.altitude
+            data['height'] += bmp.altitude
             time.sleep(0.5)
-            height+= data
-    if sensor == 'bmp':
-        data = height/n_samples
-        return data
-    else:
-        print("Sensor not recognized")
-        return None
+            
+        elif sensor == 'mpu':
+            data['acc_x'] += mpu.acceleration[0] 
+            data['acc_y'] += mpu.acceleration[1]
+            data['acc_z'] += mpu.acceleration[2]
+
+    data['height'] /= n_samples
+    data['acc_x'] /= n_samples
+    data['acc_y'] /= n_samples
+    data['acc_z'] /= n_samples
+
+    return data
 
     #while True:
      #   v1 = get_accel(n_samples)
@@ -60,8 +67,7 @@ def get_smoothed_values(sensor, n_samples=10, calibration=None):
 i2c = board.I2C()
 mpu = adafruit_mpu6050.MPU6050(i2c)
 
-# bmp = adafruit_bmp3xx.BMP3XX_I2C(i2c)
-
+print("MPU 6050 found !!")
 # SPI setup
 
 from digitalio import DigitalInOut, Direction
@@ -76,8 +82,9 @@ bmp.pressure_oversampling = 8 #for bmp390
 bmp.temperature_oversampling = 2
 time.sleep(2)
 calibration_data = calibrate('bmp')
-sea_level_feet = round(calibration_data * 3.28084, 2)
-
+calibration_mpu_data = calibrate('mpu')
+sea_level_feet = round(calibration_data['height'] * 3.28084, 2)
+print('Acceleration calibration :', calibration_mpu_data)
 while True:
   #  data = get_smoothed_values(n_samples = 100, calibration = calibration)
   #  print(
